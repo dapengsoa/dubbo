@@ -32,6 +32,13 @@ import com.alibaba.dubbo.rpc.support.MockInvoker;
 
 import java.util.List;
 
+/**
+ * 服务降级 mock invoker
+ *
+ * @param <T>
+ * @author dubbo
+ * @since 2018.06.25
+ */
 public class MockClusterInvoker<T> implements Invoker<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(MockClusterInvoker.class);

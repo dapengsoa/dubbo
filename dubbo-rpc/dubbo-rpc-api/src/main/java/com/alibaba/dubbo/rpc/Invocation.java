@@ -21,6 +21,8 @@ import java.util.Map;
 /**
  * Invocation. (API, Prototype, NonThreadSafe)
  *
+ * Invocation 包含了需要执行的方法、参数等信息
+ *
  * @serial Don't change the class name and package name.
  * @see com.alibaba.dubbo.rpc.Invoker#invoke(Invocation)
  * @see com.alibaba.dubbo.rpc.RpcInvocation
