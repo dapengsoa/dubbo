@@ -22,11 +22,12 @@ import com.alibaba.dubbo.rpc.proxy.AbstractProxyFactory;
 import com.alibaba.dubbo.rpc.proxy.AbstractProxyInvoker;
 import com.alibaba.dubbo.rpc.proxy.InvokerInvocationHandler;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 /**
- * JavaassistRpcProxyFactory
+ * JdkProxyFactory
  */
 public class JdkProxyFactory extends AbstractProxyFactory {
 
@@ -41,10 +42,35 @@ public class JdkProxyFactory extends AbstractProxyFactory {
             protected Object doInvoke(T proxy, String methodName,
                                       Class<?>[] parameterTypes,
                                       Object[] arguments) throws Throwable {
+                /**
+                 * sayHello(String name,String message) // public
+                 * getMethod("sayHello",new Class[]{String.class,String.class})
+                 */
                 Method method = proxy.getClass().getMethod(methodName, parameterTypes);
                 return method.invoke(proxy, arguments);
             }
         };
+    }
+
+
+    /**
+     * test
+     *
+     * @param args
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     * @throws NoSuchMethodException
+     */
+    public static void main(String[] args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        JdkProxyFactory jdkProxyFactory = new JdkProxyFactory();
+        System.out.println(jdkProxyFactory.getClass().getDeclaredMethods().toString());
+        Method sayHello = jdkProxyFactory.getClass().getDeclaredMethod("sayHello", int.class, String.class);
+        Object invoke = sayHello.invoke(jdkProxyFactory, 10, "大佬好!");
+        System.out.println(invoke);
+    }
+
+    private String sayHello(int type, String msg) {
+        return "type:" + type + ",msg:" + msg;
     }
 
 }

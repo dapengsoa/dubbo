@@ -27,6 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 
 /**
  * InvokerWrapper
+ * 服务端使用的 Invoker, 仅仅需要反射执行相应的方法即可
  */
 public abstract class AbstractProxyInvoker<T> implements Invoker<T> {
 

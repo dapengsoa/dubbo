@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * AbstractInvoker.
+ * 客户端使用的 Invoker,是需要进行远程通信的
  */
 public abstract class AbstractInvoker<T> implements Invoker<T> {
 
