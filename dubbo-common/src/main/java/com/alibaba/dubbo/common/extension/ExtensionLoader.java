@@ -45,9 +45,12 @@ import java.util.regex.Pattern;
 
 /**
  * Load dubbo extensions
+ * 加载 dubbo 扩展
  * <ul>
  * <li>auto inject dependency extension </li>
+ * 自动包装扩展
  * <li>auto wrap extension in wrapper </li>
+ * 默认扩展是一个自适应实例
  * <li>default extension is an adaptive instance</li>
  * </ul>
  *
@@ -67,7 +70,9 @@ public class ExtensionLoader<T> {
     private static final String DUBBO_INTERNAL_DIRECTORY = DUBBO_DIRECTORY + "internal/";
 
     private static final Pattern NAME_SEPARATOR = Pattern.compile("\\s*[,]+\\s*");
-
+    /**
+     * 每个定义的spi的接口都会构建一个ExtensionLoader实例,存储在这
+     */
     private static final ConcurrentMap<Class<?>, ExtensionLoader<?>> EXTENSION_LOADERS = new ConcurrentHashMap<Class<?>, ExtensionLoader<?>>();
 
     private static final ConcurrentMap<Class<?>, Object> EXTENSION_INSTANCES = new ConcurrentHashMap<Class<?>, Object>();
@@ -79,16 +84,26 @@ public class ExtensionLoader<T> {
     private final ExtensionFactory objectFactory;
 
     private final ConcurrentMap<Class<?>, String> cachedNames = new ConcurrentHashMap<Class<?>, String>();
-
+    /**
+     * 缓存实现类,以便于使用时获取
+     */
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<Map<String, Class<?>>>();
-
+    /**
+     * 有缓存到变量cachedActivates的map中
+     */
     private final Map<String, Activate> cachedActivates = new ConcurrentHashMap<String, Activate>();
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<String, Holder<Object>>();
     private final Holder<Object> cachedAdaptiveInstance = new Holder<Object>();
+
+    /**
+     * cachedAdaptiveClass @Activate 注解的类
+     */
     private volatile Class<?> cachedAdaptiveClass = null;
     private String cachedDefaultName;
     private volatile Throwable createAdaptiveInstanceError;
-
+    /**
+     * 存放 包装类缓存 装饰器模式
+     */
     private Set<Class<?>> cachedWrapperClasses;
 
     private Map<String, IllegalStateException> exceptions = new ConcurrentHashMap<String, IllegalStateException>();
@@ -190,23 +205,45 @@ public class ExtensionLoader<T> {
      */
     public List<T> getActivateExtension(URL url, String[] values, String group) {
         List<T> exts = new ArrayList<T>();
+        /**
+         * 将传递过来的values包装成List类型的names
+         */
         List<String> names = values == null ? new ArrayList<String>(0) : Arrays.asList(values);
+        //包装好的数据中不包含"-default"
         if (!names.contains(Constants.REMOVE_VALUE_PREFIX + Constants.DEFAULT_KEY)) {
+            //获取这个类型的数据的所有扩展信息
             getExtensionClasses();
             for (Map.Entry<String, Activate> entry : cachedActivates.entrySet()) {
+                //获取扩展的名称
                 String name = entry.getKey();
+                //获取扩展的注解
                 Activate activate = entry.getValue();
+                //判断group是否属于范围
+                //1. 如果activate注解的group没有设定，直接返回true
+                //2. 如果设定了，需要和传入的 group 进行比较，看是否包含其中，如果包含，返回true
                 if (isMatchGroup(group, activate.group())) {
+                    //group 校验通过了，从缓存中获取此name对应的实例
                     T ext = getExtension(name);
+                    //names 不包含 遍历此时的name
                     if (!names.contains(name)
+                            //names中不包含"-default"
                             && !names.contains(Constants.REMOVE_VALUE_PREFIX + name)
+                            //通过URL判断这个activate注解是激活的
                             && isActive(activate, url)) {
+                        //增加扩展
                         exts.add(ext);
                     }
                 }
             }
+            //按照Activate的方式进行排序，注意order
             Collections.sort(exts, ActivateComparator.COMPARATOR);
         }
+        /**
+         * 借用usrs这个临时变量，进行循环往exts中塞具体的ext的对象。
+         * 如果碰到了"default"就添加到头部，清空usrs这个临时变量。
+         * 如果没有"default"那么usrs不会清空，所以下面有个if，说usrs不为空
+         * 将里面的内容增加到exts中
+         */
         List<T> usrs = new ArrayList<T>();
         for (int i = 0; i < names.size(); i++) {
             String name = names.get(i);
@@ -344,6 +381,11 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 获取所有已知 扩展名
+     *
+     * @return
+     */
     public Set<String> getSupportedExtensions() {
         Map<String, Class<?>> clazzes = getExtensionClasses();
         return Collections.unmodifiableSet(new TreeSet<String>(clazzes.keySet()));
@@ -439,6 +481,13 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 获取或者创建设配对象
+     * a)如果cachedAdaptiveClass有值，说明有且仅有一个实现类打了@Adaptive, 实例化这个对象返回
+     * b)如果cachedAdaptiveClass为空， 创建设配类字节码
+     *
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public T getAdaptiveExtension() {
         Object instance = cachedAdaptiveInstance.get();
@@ -574,6 +623,14 @@ public class ExtensionLoader<T> {
     }
 
     // synchronized in getExtensionClasses
+
+    /**
+     * 读取扩展点中的实现类
+     * a)先读取SPI注解的value值，有值作为默认扩展实现的key
+     * b)依次读取路径的文件 /dubbo/internal/, /dubbo/ , /services/
+     *
+     * @return
+     */
     private Map<String, Class<?>> loadExtensionClasses() {
         final SPI defaultAnnotation = type.getAnnotation(SPI.class);
         if (defaultAnnotation != null) {
@@ -595,6 +652,25 @@ public class ExtensionLoader<T> {
         return extensionClasses;
     }
 
+    /**
+     * 逐行读取com.alibaba.dubbo.rpc.Protocol文件中的内容，每行内容以key/value形式存储的
+     * <p>
+     * a)判断类实现（如：{@link com.alibaba.dubbo.rpc.protocol.dubbo.DubboProtocol }）上有没有打上@Adaptive注解,
+     * 如果打上了注解，将此类作为Protocol协议的 设配类 缓存起来，读取下一行。
+     * 否则适配类通过javasisit修改字节码生成，关于 设配类 功能作用后续介绍
+     * <p>
+     * b)如果类实现没有打上@Adaptive,判断实现类是否存在入参为接口的构造器（就是DubbboProtocol类是否还有入参为Protocol的构造器）,
+     * 有的话作为包装类缓存到此 ExtensionLoader的Set<Class<?>>集合中，这个其实是个装饰模式.
+     * <p>
+     * c)如果既不是 设配对象 也不是 wrapped 的对象，那就是扩展点的具体实现对象
+     * <p>
+     * 查找实现类上有没有打上@Activate注解，有缓存到变量cachedActivates的map中
+     * <p>
+     * 将实现类缓存到cachedClasses中，以便于使用时获取
+     *
+     * @param extensionClasses
+     * @param dir
+     */
     private void loadFile(Map<String, Class<?>> extensionClasses, String dir) {
         String fileName = dir + type.getName();
         try {
@@ -738,6 +814,13 @@ public class ExtensionLoader<T> {
         return cachedAdaptiveClass = createAdaptiveExtensionClass();
     }
 
+    /**
+     * 通过拼接源码的方式，拿到类的文件。然后动态创建 adaptive 类  ===> aop 原理
+     * 在生成的类里去根据key 调用 获取 具体 的 实现类 。
+     * key
+     *
+     * @return
+     */
     private Class<?> createAdaptiveExtensionClass() {
         String code = createAdaptiveExtensionClassCode();
         ClassLoader classLoader = findClassLoader();

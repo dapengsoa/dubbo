@@ -37,13 +37,7 @@ import com.alibaba.dubbo.common.extensionloader.ext8_add.AddExt1;
 import com.alibaba.dubbo.common.extensionloader.ext8_add.AddExt2;
 import com.alibaba.dubbo.common.extensionloader.ext8_add.AddExt3;
 import com.alibaba.dubbo.common.extensionloader.ext8_add.AddExt4;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt1Impl1;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt1_ManualAdaptive;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt1_ManualAdd1;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt1_ManualAdd2;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt2_ManualAdaptive;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt3_ManualAdaptive;
-import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.AddExt4_ManualAdaptive;
+import com.alibaba.dubbo.common.extensionloader.ext8_add.impl.*;
 import com.alibaba.dubbo.common.extensionloader.ext9_empty.Ext9Empty;
 import com.alibaba.dubbo.common.extensionloader.ext9_empty.impl.Ext9EmptyImpl;
 
@@ -66,6 +60,11 @@ import static org.junit.Assert.fail;
 import static org.junit.matchers.JUnitMatchers.containsString;
 
 public class ExtensionLoaderTest {
+    /**
+     * ok
+     *
+     * @throws Exception
+     */
     @Test
     public void test_getExtensionLoader_Null() throws Exception {
         try {
@@ -101,6 +100,7 @@ public class ExtensionLoaderTest {
         }
     }
 
+
     @Test
     public void test_getDefaultExtension() throws Exception {
         SimpleExt ext = ExtensionLoader.getExtensionLoader(SimpleExt.class).getDefaultExtension();
@@ -125,6 +125,11 @@ public class ExtensionLoaderTest {
         assertTrue(ExtensionLoader.getExtensionLoader(SimpleExt.class).getExtension("impl2") instanceof SimpleExtImpl2);
     }
 
+    /**
+     * 测试 wrapper 类
+     *
+     * @throws Exception
+     */
     @Test
     public void test_getExtension_WithWrapper() throws Exception {
         WrappedExt impl1 = ExtensionLoader.getExtensionLoader(WrappedExt.class).getExtension("impl1");
@@ -240,6 +245,9 @@ public class ExtensionLoaderTest {
 
         assertThat(ext, instanceOf(AddExt1_ManualAdd1.class));
         assertEquals("Manual1", ExtensionLoader.getExtensionLoader(AddExt1.class).getExtensionName(AddExt1_ManualAdd1.class));
+
+
+//        ext.echo(URL.valueOf("/soa"),"maple");
     }
 
     @Test
@@ -264,12 +272,22 @@ public class ExtensionLoaderTest {
         }
     }
 
+    /**
+     * 09-18 12:56
+     *
+     * @throws Exception
+     */
     @Test
     public void test_AddExtension_Adaptive() throws Exception {
         ExtensionLoader<AddExt2> loader = ExtensionLoader.getExtensionLoader(AddExt2.class);
         loader.addExtension(null, AddExt2_ManualAdaptive.class);
 
         AddExt2 adaptive = loader.getAdaptiveExtension();
+        URL url = URL.valueOf("localhost:9090").addParameter("add.ext2", "impl1");
+
+        loader.addExtension("impl1", AddExt2Impl1.class);
+
+        adaptive.echo(url, "111");
         assertTrue(adaptive instanceof AddExt2_ManualAdaptive);
     }
 
@@ -277,7 +295,9 @@ public class ExtensionLoaderTest {
     public void test_AddExtension_Adaptive_ExceptionWhenExistedAdaptive() throws Exception {
         ExtensionLoader<AddExt1> loader = ExtensionLoader.getExtensionLoader(AddExt1.class);
 
-        loader.getAdaptiveExtension();
+        AddExt1 adaptiveExtension = loader.getAdaptiveExtension();
+
+        System.out.println(adaptiveExtension.echo(URL.valueOf("test"), "maple"));
 
         try {
             loader.addExtension(null, AddExt1_ManualAdaptive.class);

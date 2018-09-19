@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 
 /**
  * InvokerHandler
+ * 当消费者调用服务接口的方法时，实际调用的是接口代理类的InvokerInvocationHandler的invoke()方法
  */
 public class InvokerInvocationHandler implements InvocationHandler {
 
@@ -33,6 +34,16 @@ public class InvokerInvocationHandler implements InvocationHandler {
         this.invoker = handler;
     }
 
+    /**
+     * 如果是接口定义的方法，那么先根据参数和方法构造RpcInvocation，然后就会在最后根据invoker来调用invoke()方法。
+     *
+     * 实际调用到的是默认的FailoverClusterInvoker，首先调用的是其父类AbstractClusterInvoker的invoke()方法。
+     * @param proxy
+     * @param method
+     * @param args
+     * @return
+     * @throws Throwable
+     */
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         String methodName = method.getName();
         Class<?>[] parameterTypes = method.getParameterTypes();

@@ -26,7 +26,7 @@ public class NettyHelper {
 
     public static void setNettyLoggerFactory() {
         InternalLoggerFactory factory = InternalLoggerFactory.getDefaultFactory();
-        if (factory == null || !(factory instanceof DubboLoggerFactory)) {
+        if (!(factory instanceof DubboLoggerFactory)) {
             InternalLoggerFactory.setDefaultFactory(new DubboLoggerFactory());
         }
     }

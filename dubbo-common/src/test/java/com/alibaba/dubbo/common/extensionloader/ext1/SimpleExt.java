@@ -22,10 +22,15 @@ import com.alibaba.dubbo.common.extension.SPI;
 
 /**
  * Simple extension, has no wrapper
+ * <p>
+ * test_getDefaultExtension
+ * <p>
+ * 声明 default impl keyName
  */
 @SPI("impl1")
 public interface SimpleExt {
     // @Adaptive example, do not specify a explicit key.
+    //不显示的指定 key
     @Adaptive
     String echo(URL url, String s);
 

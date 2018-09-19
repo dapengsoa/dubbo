@@ -26,6 +26,8 @@ import java.lang.annotation.Target;
 
 /**
  * Provide helpful information for {@link ExtensionLoader} to inject dependency extension instance.
+ * <p>
+ * 为{@link ExtensionLoader} 注入依赖扩展实例 提供有用信息
  *
  * @see ExtensionLoader
  * @see URL
@@ -38,8 +40,12 @@ public @interface Adaptive {
      * Decide which target extension to be injected. The name of the target extension is decided by the parameter passed
      * in the URL, and the parameter names are given by this method.
      * <p>
+     * 决定注入哪个目标扩展。目标扩展名由URL中传递的参数决定，参数名由此方法给出
+     * <p>
      * If the specified parameters are not found from {@link URL}, then the default extension will be used for
      * dependency injection (specified in its interface's {@link SPI}).
+     * 如果 url 没有找到, 使用默认的.
+     * <p>
      * <p>
      * For examples, given <code>String[] {"key1", "key2"}</code>:
      * <ol>
