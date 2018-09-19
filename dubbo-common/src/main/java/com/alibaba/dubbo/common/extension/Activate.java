@@ -28,12 +28,12 @@ import java.lang.annotation.Target;
  * Activate. This annotation is useful for automatically activate certain extensions with the given criteria,
  * for examples: <code>@Activate</code> can be used to load certain <code>Filter</code> extension when there are
  * multiple implementations.
- *
+ * <p>
  * Activate. 这个注解 对于自动激活给定的某些标准扩展很有用，
  * 例如:@Activate  当Filter有多个实现时,可以用于加载某些Filter扩展
  *
  * <ol>
- *     指定集团标准。框架SPI定义了有效的组值。
+ * 指定集团标准。框架SPI定义了有效的组值。
  * <li>{@link Activate#group()} specifies group criteria. Framework SPI defines the valid group values.
  * <li>{@link Activate#value()} specifies parameter key in {@link URL} criteria. 指定参数值
  * </ol>
